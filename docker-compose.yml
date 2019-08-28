@@ -1,0 +1,83 @@
+version: '2'
+
+services:
+ identity:
+  image: "${IMAGE_PREFIX}identity:${TAG}"
+  command: -commerceHostname ${COMMERCE_HOST_NAME} -sitecoreHostname ${SITECORE_HOST_NAME} -identityHostname ${IDENTITY_HOST_NAME}
+  networks:
+    exampleNetwork:
+      aliases:
+        - ${IDENTITY_HOST_NAME}
+  depends_on:
+    - mssql
+
+ commerce:
+  image: "${IMAGE_PREFIX}commerce:${TAG}"
+  command: -commerceHostname ${COMMERCE_HOST_NAME} -sitecoreHostname ${SITECORE_HOST_NAME} -identityHostname ${IDENTITY_HOST_NAME}
+  networks:
+    exampleNetwork:
+      aliases:
+        - ${COMMERCE_HOST_NAME}
+  volumes:
+    - .\logs\commerce\CommerceAuthoring_Sc9:C:\inetpub\wwwroot\CommerceAuthoring_Sc9\wwwroot\logs
+    - .\logs\commerce\CommerceMinions_Sc9:C:\inetpub\wwwroot\CommerceMinions_Sc9\wwwroot\logs
+    - .\logs\commerce\CommerceOps_Sc9:C:\inetpub\wwwroot\CommerceOps_Sc9\wwwroot\logs
+    - .\logs\commerce\CommerceShops_Sc9:C:\inetpub\wwwroot\CommerceShops_Sc9\wwwroot\logs
+    - .\logs\commerce\SitecoreIdentityServer:C:\inetpub\wwwroot\SitecoreIdentityServer\wwwroot\logs
+    - .\wwwroot\commerce:C:\Workspace
+  depends_on:
+    - xconnect
+    - mssql
+    - solr
+    - sitecore
+    - identity
+
+ mssql:
+  image: "${IMAGE_PREFIX}mssql:${TAG}"
+  networks:
+    - exampleNetwork 
+  environment:
+    ACCEPT_EULA: "Y"
+    sa_password: ${SQL_SA_PASSWORD}
+  volumes:
+    - .\data\mssql:C:\Data
+  
+ sitecore:
+  image: "${IMAGE_PREFIX}sitecore:${TAG}"
+  command: -commerceHostname ${COMMERCE_HOST_NAME} -identityHostname ${IDENTITY_HOST_NAME}
+  networks:
+    exampleNetwork:
+      aliases:
+        - ${SITECORE_HOST_NAME}
+  volumes:
+    - .\logs\sitecore:c:\inetpub\wwwroot\${SITECORE_SITE_NAME}\App_Data\logs
+    - .\wwwroot\sitecore:C:\Workspace
+    - .\license:C:\license    
+  depends_on:
+    - xconnect
+    - mssql
+    - solr
+    - identity
+  
+ solr:
+  image: "${IMAGE_PREFIX}solr:${TAG}"
+  networks:
+    - exampleNetwork 
+  volumes:
+    - .\data\solr:C:\Data
+  
+ xconnect:
+  image: "${IMAGE_PREFIX}xconnect:${TAG}"
+  networks:
+    - exampleNetwork 
+  volumes:
+    - .\logs\xconnect:C:\inetpub\wwwroot\xconnect\App_data\Logs
+    - .\license:C:\license    
+  depends_on:
+    - mssql
+    - solr
+
+networks:
+  exampleNetwork:
+    external:
+      name: nat

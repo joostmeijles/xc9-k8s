@@ -1,0 +1,78 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: commerce-deployment
+  labels:
+    app: commerce
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: commerce
+  template:
+    metadata:
+      labels:
+        app: commerce
+    spec:
+      nodeSelector:
+        "beta.kubernetes.io/os": windows # Run on a Windows Node
+      containers:
+      - name: commerce
+        image: avivasolutionsnl.azurecr.io/sitecore-xc-commerce:9.1.0-20190717
+        ports:
+        - containerPort: 4000
+        - containerPort: 4200
+        - containerPort: 5000
+        - containerPort: 5005
+        - containerPort: 5010
+        - containerPort: 5015
+        args:
+        - -commerceHostname
+        - commerce
+        - -identityHostname
+        - identity
+        - -sitecoreHostname
+        - sitecore
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: commerce
+spec:
+  ports:
+  - name: port4000
+    protocol: TCP
+    port: 4000
+  - name: port4200
+    protocol: TCP
+    port: 4200
+  - name: port5000
+    protocol: TCP
+    port: 5000
+  - name: port5005
+    protocol: TCP
+    port: 5005
+  - name: port5010
+    protocol: TCP
+    port: 5010
+  - name: port5015
+    protocol: TCP
+    port: 5015
+  selector:
+    app: commerce
+---
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: commerce
+  annotations:
+    kubernetes.io/ingress.class: nginx
+spec:
+  rules:
+  - host: commerce.xc9-k8s.rocks
+    http:
+      paths:
+      - backend:
+          serviceName: commerce
+          servicePort: 4200
+        path: /

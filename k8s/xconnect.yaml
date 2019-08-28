@@ -1,0 +1,44 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: xconnect-deployment
+  labels:
+    app: xconnect
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: xconnect
+  template:
+    metadata:
+      labels:
+        app: xconnect
+    spec:
+      nodeSelector:
+        "beta.kubernetes.io/os": windows # Run on a Windows Node
+      containers:
+      - name: xconnect
+        image: avivasolutionsnl.azurecr.io/sitecore-xc-xconnect:9.1.0-20190717
+        ports:
+          - containerPort: 443
+        volumeMounts:
+          - mountPath: "/license"
+            name: license
+            readOnly: true
+      volumes:
+        - name: license
+          azureFile:
+            secretName: azure-licenseshare-secret
+            shareName: license
+            readOnly: true
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: xconnect
+spec:
+  ports:
+  - protocol: TCP
+    port: 443
+  selector:
+    app: xconnect

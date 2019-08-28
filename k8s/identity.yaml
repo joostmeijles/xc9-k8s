@@ -1,0 +1,60 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: identity-deployment
+  labels:
+    app: identity
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: identity
+  template:
+    metadata:
+      labels:
+        app: identity
+    spec:
+      nodeSelector:
+        "beta.kubernetes.io/os": windows # Run on a Windows Node
+      containers:
+      - name: identity
+        image: avivasolutionsnl.azurecr.io/sitecore-xc-identity:9.1.0-20190717
+        ports:
+          - containerPort: 80
+        args:
+        - -commerceHostname
+        - commerce
+        - -identityHostname
+        - identity
+        - -sitecoreHostname
+        - sitecore
+---
+# If the Identity service is not discoverable, i.e. not a service, Sitecore falls back to no Identity Server mode
+# Until we have setup TLS Ingress is the workaround.
+apiVersion: v1
+kind: Service
+metadata:
+  name: identity
+spec:
+  ports:
+  - protocol: TCP
+    port: 80
+  selector:
+    app: identity
+---
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: identity
+  annotations:
+    kubernetes.io/ingress.class: nginx
+spec:
+  rules:
+  - host: identity.xc9-k8s.rocks
+    http:
+      paths:
+      - backend:
+          serviceName: identity
+          servicePort: 80
+        path: /
+

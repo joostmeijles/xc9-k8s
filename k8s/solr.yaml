@@ -1,0 +1,69 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: solr-deployment
+  labels:
+    app: solr
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: solr
+  template:
+    metadata:
+      labels:
+        app: solr
+    spec:
+      nodeSelector:
+        "beta.kubernetes.io/os": windows # Run on a Windows Node
+      containers:
+      - name: solr
+        image: avivasolutionsnl.azurecr.io/sitecore-xc-solr:9.1.0-20190717
+        ports:
+          - containerPort: 8983
+        volumeMounts:
+          - mountPath: "/Data"
+            name: volume
+      volumes:
+        - name: volume
+          persistentVolumeClaim:
+            claimName: solr-managed-disk
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: solr-managed-disk
+spec:
+  accessModes:
+  - ReadWriteOnce
+  storageClassName: managed-premium
+  resources:
+    requests:
+      storage: 5Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: solr
+spec:
+  ports:
+  - protocol: TCP
+    port: 8983
+  selector:
+    app: solr
+---
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: solr
+  annotations:
+    kubernetes.io/ingress.class: nginx
+spec:
+  rules:
+  - host: solr.xc9-k8s.rocks
+    http:
+      paths:
+      - backend:
+          serviceName: solr
+          servicePort: 8983
+        path: /

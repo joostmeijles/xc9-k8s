@@ -1,0 +1,65 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sitecore-deployment
+  labels:
+    app: sitecore
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: sitecore
+  template:
+    metadata:
+      labels:
+        app: sitecore
+    spec:
+      nodeSelector:
+        "beta.kubernetes.io/os": windows # Run on a Windows Node
+      containers:
+      - name: sitecore
+        image: avivasolutionsnl.azurecr.io/sitecore-xc-sitecore:9.1.0-20190717
+        ports:
+          - containerPort: 80
+        args:
+        - -commerceHostname 
+        - commerce
+        - -identityHostname 
+        - identity
+        volumeMounts:
+          - mountPath: "/license"
+            name: license
+            readOnly: true
+      volumes:
+        - name: license
+          azureFile:
+            secretName: azure-licenseshare-secret
+            shareName: license
+            readOnly: true
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: sitecore
+spec:
+  ports:
+  - protocol: TCP
+    port: 80
+  selector:
+    app: sitecore
+---
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: sitecore
+  annotations:
+    kubernetes.io/ingress.class: nginx
+spec:
+  rules:
+  - host: www.xc9-k8s.rocks
+    http:
+      paths:
+      - backend:
+          serviceName: sitecore
+          servicePort: 80
+        path: /
