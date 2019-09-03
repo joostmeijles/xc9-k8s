@@ -26,7 +26,7 @@ Total costs are approx. €0.30/hour (excluding a small amount of storage costs)
 
 Configure `kubectl` credentials:
 ```
-PS> az aks get-credentials --resource-group myCluster --name myAKSCluster
+PS> az aks get-credentials --resource-group myResourceGroup --name myAKSCluster
 ```
 
 Connect to the cluster:
@@ -52,16 +52,93 @@ Start the VMs again using:
 PS> ./StartCluster.ps1
 ```
 
-### Setup ACR connection
+## Setup ACR connection
 In order to pull Docker images from an Azure Container Registry you need to grant the cluster Service Principal `AcrPull` rights.
 
 Get Service Principal Id:
 ```
-PS> az aks show --resource-group $AKS_RESOURCE_GROUP --name $AKS_CLUSTER_NAME --query "servicePrincipalProfile.clientId" --output tsv
+PS> az aks show --resource-group myResourceGroup --name myAKSCluster --query "servicePrincipalProfile.clientId" --output tsv
 ```
 Use this Id to assign `AcrPull` rights in the ACR. As the ACR lives under a different subscription its easiest do this using the Azure Portal GUI.
 
 See [here](https://docs.microsoft.com/en-us//azure/aks/cluster-container-registry-integration?view=azure-cli-latest) for more details.
+
+## Add Ingress routing
+HTTP application routing using AKS is described [here](https://docs.microsoft.com/en-us//azure/aks/http-application-routing). There are several ways of routing ingress traffic, for HTTP traffic there is a choice of Ingress controllers e.g. Nginx, Traefik. As Nginx seems to be the most commonly used and most well documented for AKS we will use Nginx.
+
+### Deploy Nginx Ingress controller
+How to deploy a Nginx Ingress controller is described [here](https://kubernetes.github.io/ingress-nginx/deploy/#azure).
+
+It consists of two steps;
+1. Mandatory part:
+```
+PS> kubectl apply -f ./k8s/nginx-ingress.yml
+```
+> `nginx-ingress.yml` is [this](https://raw.githubusercontent.com/kubernetes/ingress-nginx/master/deploy/static/mandatory.yaml)) + Linux node selector.
+
+1. A cloud provider specific, Azure part:
+```
+PS> kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/master/deploy/static/provider/cloud-generic.yaml
+```
+
+## Add External DNS configuration
+By default you will only have a Ip configured for you cluster. It of course more convenient to have a DNS name assigned to it.
+As prerequisite you need to have a domain name and Azure DNS zone setup (see [here](https://docs.microsoft.com/en-us/azure/dns/dns-domain-delegation)). 
+
+To dynamic DNS provisioning for your cluster we use an [external-dns](https://github.com/kubernetes-incubator/external-dns/blob/master/docs/tutorials/azure.md) service, to set it up;
+- Create a resource group
+- Assign `Contributor` rights to AKS Cluster Service Principal
+- Create a Kubernetes Secret as described [here](https://github.com/kubernetes-incubator/external-dns/blob/master/docs/tutorials/azure.md#creating-configuration-file)
+(Get the `aadClientId` and `aadClientSecret` from the automatically created `~/.azure/aksServicePrincipal.json` file)
+Creating a Kubernetes secret basically means uploading a JSON file to Kubernetes, e.g:
+```
+PS> kubectl create secret generic azure-config-file --from-file=azure.json
+```
+
+> The filename used to create the secret will by default be used as name when the secret is mounted (`azure.json` in this case)!
+
+Finally deploy the External DNS service:
+```
+PS> kubectl apply -f .\k8s\externaldns.yml
+```
+
+## Setup Helm
+Helm is a package installer for Kubernetes, it makes application installation much easier.
+
+First install Helm on your host machine: 
+```
+PS> choco install kubernetes-helm
+```
+
+To install Helm on AKS:
+```
+PS> kubectl apply -f ./k8s/helm-rbac.yml
+PS> helm init --service-account tiller --node-selectors "beta.kubernetes.io/os=linux"
+```
+
+Read the full details [here](https://docs.microsoft.com/en-us/azure/aks/kubernetes-helm).
+
+## Add automatic TLS certificates
+The preferred way is to use cert-manager. It however currently does not fully support `nodeSelector` and thus does not work in hybrid cluster, e.g. like we have with a Linux and Windows node.
+
+The legacy and workaround is to use `kube-lego`:
+```
+PS> helm install --name kube-lego --set config.LEGO_EMAIL=joost@meijl.es --set config.LEGO_URL=https://acme-v01.api.letsencrypt.org/directory --set nodeSelector."beta\.kubernetes\.io\/os"=linux --set rbac.create=true stable/kube-lego
+``` 
+
+Next to enable automatic tls generation for a certain ingress route add an annotation;
+```
+metadata:
+  annotations:
+    ...
+    kubernetes.io/tls-acme: "true"
+```
+to your Ingress spec.
+
+Inspect the logs of the `kube-log` to follow the certificaton request process, e.g:
+```
+PS> kubectl logs kube-lego-kube-lego-7bf7d44dfb-7dnpz
+```
 
 # Prepare application
 The Docker Compose setup needs to be translated into a Kubernetes setup. 
@@ -80,6 +157,7 @@ There are two options for file storage in AKS:
 We use Azure Disk for our SQL and Solr databases and Azure Files for mounting the Sitecore license file.
 > TODO: Investigate lifetime
 
+### Sitecore license
 To create an Azure Files share for the Sitecore license file, run:
 ```
 PS> ./CreateLicenseStorage.ps1
@@ -98,57 +176,62 @@ This will create a storage (named `license`) and secret (named `azure-licensesha
 
 Copy the actual license file to the share by using the Azure Portal or SMB mount.
 
-# Ingress routing
-HTTP application routing using AKS is described [here](https://docs.microsoft.com/en-us//azure/aks/http-application-routing). There are several ways of routing ingress traffic, for HTTP traffic there is a choice of Ingress controllers e.g. Nginx, Traefik. As Nginx seems to be the most commonly used and most well documented for AKS we chose this one.
-
-## Deploy Nginx Ingress controller
-How to deploy a Nginx Ingress controller is described [here](https://kubernetes.github.io/ingress-nginx/deploy/#azure).
-
-It consists of two steps;
-1. Mandatory part:
-```
-PS> kubectl apply -f ./k8s/nginx-ingress.yml
-```
-> `nginx-ingress.yml` is [this](https://raw.githubusercontent.com/kubernetes/ingress-nginx/master/deploy/static/mandatory.yaml)) + Linux node selector.
-
-1. A cloud provider specific, Azure part:
-```
-PS> kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/master/deploy/static/provider/cloud-generic.yaml
-```
-
-## External HTTPS, internal  HTTP
+## Configure external HTTPS, internal  HTTP
 In order to dynamically assign domain names and sign certificates its easiest to let the Ingress controller handle HTTPS and internally use HTTP. As the cluster internal network is private using HTTP is okay.
 
 To remove an existing HTTPS binding and replace it by a HTTP binding, you can use the following Powershell commands:
 ```
-Get-WebBinding -Name $bindingName -Protocol 'https' -Port $port | Remove-WebBinding
-New-WebBinding -Name $bindingName -HostHeader '*' -IPAddress * -Protocol 'http' -Port $port
+Get-WebBinding -Name $bindingName -Protocol 'https' -Port 443 | Remove-WebBinding
+New-WebBinding -Name $bindingName -HostHeader '*' -IPAddress * -Protocol 'http' -Port 80
 ```
 
 This change is necessary for the Commerce Business tools, Identity server.
 
-# External DNS configuration
-https://github.com/kubernetes-incubator/external-dns/blob/master/docs/tutorials/azure.md
-- Create resource group
-- Assign `Contributor` rights to AKS Cluster Service Principal
-- Create Kubernetes Secret: https://github.com/kubernetes-incubator/external-dns/blob/master/docs/tutorials/azure.md#creating-configuration-file
-(Get the `aadClientId` and `aadClientSecret` from the automatically created `~/.azure/aksServicePrincipal.json` file)
---> This basically uploads the JSON file as secret to Kubernetes
-NB. The file that's used to create the secret will by default be used when the secret is mounted (`azure.json` in this case)!
-
 # Run application
+Once all Kubernetes YAML spec files are prepared, it is simply a matter of applying all these:
+```
+kubectl apply -f ./k8s/mssql.yaml
+kubectl apply -f ./k8s/solr.yaml
+kubectl apply -f ./k8s/identity.yaml
+kubectl apply -f ./k8s/sitecore.yaml
+kubectl apply -f ./k8s/commerce.yaml
+kubectl apply -f ./k8s/xconnect.yaml
+```
+and wait for the Pods to be running. 
 
-> TODO
-> Scaling, updating, upgrading nodes in cluster
-> Helm
+Inspect the Pod states by performing:
+```
+PS> kubectl get pods -o wide
+```
 
 ## Connect to containers in cluster
+For troubleshooting exec-ing into a Pod is very useful. To open a powershell in a Pod:
 ```
 PS> kubectl exec -ti <pod> powershell
 ```
-https://docs.microsoft.com/en-us/azure/aks/ssh -> Create a helper SSH Pod
-https://docs.microsoft.com/en-us/azure/aks/rdp -> Create a VM on the same subnet as cluster VM and RDP into it.
 
+If necessary there are options to use [SSH](https://docs.microsoft.com/en-us/azure/aks/ssh) and [RDP](https://docs.microsoft.com/en-us/azure/aks/rdp) to inspect a Pod.
+
+# Scale application
+To perform scaling you need to make the number of *nodes* and *pods* variable.
+
+To enable Node scaling (full details [here](https://docs.microsoft.com/en-us/azure/aks/cluster-autoscaler)), add the `--enable-cluster-autoscaler` and minimum and maximum number of nodes to your cluster create or update command, e.g:
+```
+--enable-cluster-autoscaler --min-count 1 --max-count 5
+```
+> The cluster autoscaler has many more parameters, see [here](https://github.com/kubernetes/autoscaler/blob/master/cluster-autoscaler/FAQ.md#what-are-the-parameters-to-ca)
+Run `EnableNodeScaling.ps1` to add auto-scaling to a running cluster.
+
+To enable Pod scaling (full details [here](https://docs.microsoft.com/en-us/azure/aks/tutorial-kubernetes-scale)), specify resources for the containers in your Pod, e.g:
+```
+resources:
+  requests:
+     cpu: 250m
+  limits:
+     cpu: 500m
+```
+
+That's all, your cluster nodes and pods will scale horizontally based on the measured load.
 
 # Troubleshooting
 

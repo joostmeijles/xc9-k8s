@@ -25,9 +25,19 @@ spec:
         - -commerceHostname
         - commerce
         - -identityHostname
-        - identity
+        - identity.xc9-k8s.rocks
         - -sitecoreHostname
-        - sitecore
+        - www.xc9-k8s.rocks
+        volumeMounts:
+          - mountPath: "/license"
+            name: license
+            readOnly: true
+      volumes:
+        - name: license
+          azureFile:
+            secretName: azure-licenseshare-secret
+            shareName: license
+            readOnly: true
 ---
 # If the Identity service is not discoverable, i.e. not a service, Sitecore falls back to no Identity Server mode
 # Until we have setup TLS Ingress is the workaround.
@@ -48,7 +58,12 @@ metadata:
   name: identity
   annotations:
     kubernetes.io/ingress.class: nginx
+    kubernetes.io/tls-acme: 'true'
 spec:
+  tls:
+  - hosts:
+    - identity.xc9-k8s.rocks
+    secretName: tls-secret-identity
   rules:
   - host: identity.xc9-k8s.rocks
     http:

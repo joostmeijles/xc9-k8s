@@ -1,5 +1,5 @@
 Param(
-    [string]$ResourceGroup = "myCluster",
+    [string]$ResourceGroup = "myResourceGroup",
     [string]$Location = "westeurope",
     [string]$ClusterName = "myAKSCluster",
     [string]$WindowsAdminUser = "azureuser",

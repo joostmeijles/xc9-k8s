@@ -22,10 +22,10 @@ spec:
         ports:
           - containerPort: 80
         args:
-        - -commerceHostname 
+        - -commerceHostname
         - commerce
-        - -identityHostname 
-        - identity
+        - -identityHostname
+        - identity.xc9-k8s.rocks
         volumeMounts:
           - mountPath: "/license"
             name: license
@@ -54,7 +54,12 @@ metadata:
   name: sitecore
   annotations:
     kubernetes.io/ingress.class: nginx
+    kubernetes.io/tls-acme: 'true'
 spec:
+  tls:
+  - hosts:
+    - www.xc9-k8s.rocks
+    secretName: tls-secret-www
   rules:
   - host: www.xc9-k8s.rocks
     http:
