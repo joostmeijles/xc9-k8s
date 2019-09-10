@@ -187,6 +187,17 @@ New-WebBinding -Name $bindingName -HostHeader '*' -IPAddress * -Protocol 'http' 
 
 This change is necessary for the Commerce Business tools, Identity server.
 
+## Enable reverse proxy support 
+Identity Server 9.1 does not have reverse-proxy support out-of-the-box. To enable reverse proxy support add [this]( https://github.com/joostmeijles/Sitecore.Identity.ProxySupport) plugin. 
+
+## Update CORS config
+Update all CORS allowed origins:
+- for the Identity Server (e.g. all files in directory `C:\inetpub\wwwroot\identity\Config\production`)
+- In the Commerce container modify all configs that are changed by the `UpdateHostname.ps1` script at start-up
+
+## Update Sitecore config
+Update Commerce engine URLs in `Y.Commerce.Engine\Sitecore.Commerce.Engine.Connect.config`
+
 # Run application
 Once all Kubernetes YAML spec files are prepared, it is simply a matter of applying all these:
 ```
