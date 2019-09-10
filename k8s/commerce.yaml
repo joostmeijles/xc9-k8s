@@ -18,7 +18,7 @@ spec:
         "beta.kubernetes.io/os": windows # Run on a Windows Node
       containers:
       - name: commerce
-        image: avivasolutionsnl.azurecr.io/sitecore-xc-commerce:9.1.0-20190717
+        image: avivasolutionsnl.azurecr.io/sitecore-xc-commerce:9.1.0-20190910-proxy
         ports:
         - containerPort: 4000
         - containerPort: 4200
@@ -28,11 +28,11 @@ spec:
         - containerPort: 5015
         args:
         - -commerceHostname
-        - commerce
+        - commerce.xc9-k8s.rocks
         - -identityHostname
         - identity.xc9-k8s.rocks
         - -sitecoreHostname
-        - sitecore.xc9-k8s.rocks
+        - www.xc9-k8s.rocks
         resources:
           requests:
             cpu: 250m
@@ -76,16 +76,24 @@ metadata:
 spec:
   tls:
   - hosts:
+    - bizfx.xc9-k8s.rocks
     - commerce.xc9-k8s.rocks
     - plumber.xc9-k8s.rocks
     secretName: tls-secret-commerce
   rules:
-  - host: commerce.xc9-k8s.rocks
+  - host: bizfx.xc9-k8s.rocks
     http:
       paths:
       - backend:
           serviceName: commerce
           servicePort: 4200
+        path: /
+  - host: commerce.xc9-k8s.rocks
+    http:
+      paths:
+      - backend:
+          serviceName: commerce
+          servicePort: 5000
         path: /
   - host: plumber.xc9-k8s.rocks
     http:
