@@ -2,7 +2,7 @@ version: '2'
 
 services:
  identity:
-  image: "${IMAGE_PREFIX}identity:${TAG}"
+  image: "${IMAGE_PREFIX}identity:${TAG}-proxy"
   command: -commerceHostname ${COMMERCE_HOST_NAME} -sitecoreHostname ${SITECORE_HOST_NAME} -identityHostname ${IDENTITY_HOST_NAME}
   networks:
     exampleNetwork:
@@ -12,7 +12,7 @@ services:
     - mssql
 
  commerce:
-  image: "${IMAGE_PREFIX}commerce:${TAG}"
+  image: "${IMAGE_PREFIX}commerce:${TAG}-proxy"
   command: -commerceHostname ${COMMERCE_HOST_NAME} -sitecoreHostname ${SITECORE_HOST_NAME} -identityHostname ${IDENTITY_HOST_NAME}
   networks:
     exampleNetwork:
