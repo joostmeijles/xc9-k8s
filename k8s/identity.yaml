@@ -18,12 +18,12 @@ spec:
         "beta.kubernetes.io/os": windows # Run on a Windows Node
       containers:
       - name: identity
-        image: avivasolutionsnl.azurecr.io/sitecore-xc-identity:9.1.0-20190717
+        image: avivasolutionsnl.azurecr.io/sitecore-xc-identity:9.1.0-20190909-proxy
         ports:
           - containerPort: 80
         args:
         - -commerceHostname
-        - commerce
+        - commerce.xc9-k8s.rocks
         - -identityHostname
         - identity.xc9-k8s.rocks
         - -sitecoreHostname
@@ -39,8 +39,6 @@ spec:
             shareName: license
             readOnly: true
 ---
-# If the Identity service is not discoverable, i.e. not a service, Sitecore falls back to no Identity Server mode
-# Until we have setup TLS Ingress is the workaround.
 apiVersion: v1
 kind: Service
 metadata:

@@ -18,12 +18,12 @@ spec:
         "beta.kubernetes.io/os": windows # Run on a Windows Node
       containers:
       - name: sitecore
-        image: avivasolutionsnl.azurecr.io/sitecore-xc-sitecore:9.1.0-20190717
+        image: avivasolutionsnl.azurecr.io/sitecore-xc-sitecore:9.1.0-20190904
         ports:
           - containerPort: 80
         args:
         - -commerceHostname
-        - commerce
+        - commerce.xc9-k8s.rocks
         - -identityHostname
         - identity.xc9-k8s.rocks
         volumeMounts:
@@ -43,8 +43,13 @@ metadata:
   name: sitecore
 spec:
   ports:
-  - protocol: TCP
+  - name: port80
+    protocol: TCP
     port: 80
+  # Commerce engine uses https://sitecore    
+  - name: port443
+    protocol: TCP
+    port: 443
   selector:
     app: sitecore
 ---
