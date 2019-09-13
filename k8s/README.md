@@ -1,5 +1,5 @@
 # Create a cluster
-The Azure CLI automates large part of what is needed to setup a Kubernetes cluster.
+The Azure CLI automates a large part of what is needed to setup a Kubernetes cluster.
 
 To create a resource group and cluster as described [here](https://docs.microsoft.com/en-us//azure/aks/windows-container-cli#create-a-resource-group) run;
 ```
@@ -60,9 +60,9 @@ How to deploy a Nginx Ingress controller is described [here](https://kubernetes.
 It consists of two steps;
 1. Mandatory part:
 ```
-PS> kubectl apply -f ./k8s/nginx-ingress.yml
+PS> kubectl apply -f ./k8s/nginx-ingress.yaml
 ```
-> `nginx-ingress.yml` is [this](https://raw.githubusercontent.com/kubernetes/ingress-nginx/master/deploy/static/mandatory.yaml)) + Linux node selector.
+> `nginx-ingress.yaml` is [this](https://raw.githubusercontent.com/kubernetes/ingress-nginx/master/deploy/static/mandatory.yaml)) + Linux node selector.
 
 1. A cloud provider specific, Azure part:
 ```
@@ -87,7 +87,7 @@ PS> kubectl create secret generic azure-config-file --from-file=azure.json
 
 Finally deploy the External DNS service:
 ```
-PS> kubectl apply -f .\k8s\externaldns.yml
+PS> kubectl apply -f .\k8s\externaldns.yaml
 ```
 
 ## Setup Helm
@@ -100,7 +100,7 @@ PS> choco install kubernetes-helm
 
 To install Helm on AKS:
 ```
-PS> kubectl apply -f ./k8s/helm-rbac.yml
+PS> kubectl apply -f ./k8s/helm-rbac.yaml
 PS> helm init --service-account tiller --node-selectors "beta.kubernetes.io/os=linux"
 ```
 
