@@ -8,7 +8,7 @@ PS> kubectl apply -f ./scale
 > Remove the `xc9` deployment before running this example
 
 # Scale application
-To perform scaling you need to make the number of *nodes* and *pods* variable.
+You can scale cluster nodes and pods.
 
 To enable Node scaling (full details [here](https://docs.microsoft.com/en-us/azure/aks/cluster-autoscaler)), add the `--enable-cluster-autoscaler` and minimum and maximum number of nodes to your cluster create or update command, e.g:
 ```
@@ -17,26 +17,54 @@ To enable Node scaling (full details [here](https://docs.microsoft.com/en-us/azu
 > The cluster autoscaler has many more parameters, see [here](https://github.com/kubernetes/autoscaler/blob/master/cluster-autoscaler/FAQ.md#what-are-the-parameters-to-ca)
 Run `EnableNodeScaling.ps1` to add auto-scaling to a running cluster.
 
-To enable Pod scaling (full details [here](https://docs.microsoft.com/en-us/azure/aks/tutorial-kubernetes-scale)), specify resources for the containers in your Pod, e.g:
+To enable Pod scaling (full details [here](https://docs.microsoft.com/en-us/azure/aks/tutorial-kubernetes-scale)), specify resources *per* container in a Pod, e.g:
 ```
 resources:
-  requests:
+  requests: # Minimum
      cpu: 250m
-  limits:
-     cpu: 500m
+  limits: # Maximum
+     cpu: 250m
 ```
+Above states that the container requests at least *and* at most 250 milli CPU (i.e. 25% CPU).
 
-That's all, your cluster nodes and pods will scale horizontally based on the measured load.
+Next add a `HorizontalPodAutoscaler`, for example:
+
+```
+apiVersion: autoscaling/v2beta2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: commerce
+  namespace: default
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: commerce
+  minReplicas: 1
+  maxReplicas: 3
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 50 # Target is 50% of the requested CPU accros all pods, i.e. 50% of 250 milli CPU in this case
+```
+Above spec requests to add a Pod when a the CPU load for a single Pod, which is the minimum and initial situation, goes above 50% of the requested 250 milli CPU.
+
+See [here](https://kubernetes.io/docs/tasks/run-application/horizontal-pod-autoscale-walkthrough/) for full details.
 
 # Trigger load
+To trigger some load we will use K6 Loadimpact.
+
+In `loadtest.js` a single product is added to the cart. 
+
+To run this cart addition for 30 seconds and 100 virtual users do:
 ```
 PS> docker run -i loadimpact/k6 run -u 100 -d 30s -< loadtest.js
 ```
 
+Monitor the number of Pod replicas by:
 ```
-PS> kubectl autoscale deployment commerce-deployment --cpu-percent=10 --min=1 --max=10
+PS> kubectl get pod -w
 ```
-
-
-https://kubernetes.io/docs/tasks/configure-pod-container/assign-cpu-resource/
-https://kubernetes.io/docs/tasks/run-application/horizontal-pod-autoscale-walkthrough/

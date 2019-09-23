@@ -1,0 +1,58 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mssql-deployment
+  labels:
+    app: mssql
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mssql
+  template:
+    metadata:
+      labels:
+        app: mssql
+    spec:
+      nodeSelector:
+        "beta.kubernetes.io/os": windows # Run on a Windows Node
+      containers:
+      - name: mssql
+        image: avivasolutionsnl.azurecr.io/mercury-demo-mssql:9.0.3-20190527
+        ports:
+          - containerPort: 1433
+        env:
+        - name: ACCEPT_EULA
+          value: "Y"
+        - name: sa_password
+          value: my_Sup3rSecret!!
+        volumeMounts:
+          - mountPath: "/Data"
+            name: volume
+      volumes:
+        - name: volume
+          persistentVolumeClaim:
+            claimName: mssql-managed-disk
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: mssql-managed-disk
+spec:
+  accessModes:
+  - ReadWriteOnce
+  storageClassName: managed-premium
+  resources:
+    requests:
+      storage: 5Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mssql
+spec:
+  ports:
+  - protocol: TCP
+    port: 1433
+  selector:
+    app: mssql
