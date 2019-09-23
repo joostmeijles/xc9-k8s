@@ -18,7 +18,7 @@ spec:
         "beta.kubernetes.io/os": windows # Run on a Windows Node
       containers:
       - name: identity
-        image: avivasolutionsnl.azurecr.io/sitecore-xc-identity-demo-config:9.1.0-20190904
+        image: avivasolutionsnl.azurecr.io/sitecore-xc-identity-demo-config:9.1.0-20190922
         ports:
           - containerPort: 80
         args:
