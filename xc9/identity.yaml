@@ -18,7 +18,7 @@ spec:
         "beta.kubernetes.io/os": windows # Run on a Windows Node
       containers:
       - name: identity
-        image: avivasolutionsnl.azurecr.io/sitecore-xc-identity:9.1.0-20190909-proxy
+        image: avivasolutionsnl.azurecr.io/sitecore-xc-identity:9.1.0-20190904
         ports:
           - containerPort: 80
         args:
@@ -34,10 +34,8 @@ spec:
             readOnly: true
       volumes:
         - name: license
-          azureFile:
-            secretName: azure-licenseshare-secret
-            shareName: license
-            readOnly: true
+          secret:
+            secretName: sitecore-license
 ---
 apiVersion: v1
 kind: Service

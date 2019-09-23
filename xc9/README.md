@@ -12,27 +12,33 @@ There are two options for file storage in AKS:
 - [Azure Disk](https://docs.microsoft.com/en-us//azure/aks/azure-disks-dynamic-pv)
 - [Azure Files](https://docs.microsoft.com/en-us//azure/aks/azure-files-dynamic-pv)
 
-We use Azure Disk for our SQL and Solr databases and Azure Files for mounting the Sitecore license file.
-> TODO: Investigate lifetime
+We use Azure Disk for our SQL and Solr databases and a Kubernetes Secret for the Sitecore license file.
 
 ### Sitecore license
-To create an Azure Files share for the Sitecore license file, run:
+Create a Kubernetes secret from your `license.xml` file:
 ```
-PS> ./CreateLicenseStorage.ps1
+PS> kubectl create secret generic sitecore-license --from-file=license.xml
+```
+
+Verify that it present:
+```
+PS> kubectl describe secrets sitecore-license
 ```
 
 This will create a storage (named `license`) and secret (named `azure-licenseshare-secret`) that can be used in a Kubernetes YAML file as follows:
 ```
+    container:
+      ...
+      volumeMounts:
+          - mountPath: "/license"
+            name: license
+            readOnly: true
     ...
     volumes:
         - name: license
-          azureFile:
-            secretName: azure-licenseshare-secret
-            shareName: license
-            readOnly: true
+          secrete:
+            secretName: sitecore-license
 ```
-
-Copy the actual license file to the share by using the Azure Portal or SMB mount.
 
 ## Configure external HTTPS, internal  HTTP
 In order to dynamically assign domain names and sign certificates its easiest to let the Ingress controller handle HTTPS and internally use HTTP. As the cluster internal network is private using HTTP is okay.
@@ -59,12 +65,7 @@ Update Commerce engine URLs in `Y.Commerce.Engine\Sitecore.Commerce.Engine.Conne
 # Run application
 Once all Kubernetes YAML spec files are prepared, it is simply a matter of applying all these:
 ```
-kubectl apply -f ./k8s/mssql.yaml
-kubectl apply -f ./k8s/solr.yaml
-kubectl apply -f ./k8s/identity.yaml
-kubectl apply -f ./k8s/sitecore.yaml
-kubectl apply -f ./k8s/commerce.yaml
-kubectl apply -f ./k8s/xconnect.yaml
+PS> kubectl apply -f ./xc9
 ```
 and wait for the Pods to be running. 
 

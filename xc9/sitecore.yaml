@@ -32,10 +32,8 @@ spec:
             readOnly: true
       volumes:
         - name: license
-          azureFile:
-            secretName: azure-licenseshare-secret
-            shareName: license
-            readOnly: true
+          secret:
+            secretName: sitecore-license
 ---
 apiVersion: v1
 kind: Service
