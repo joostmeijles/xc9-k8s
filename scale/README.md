@@ -17,7 +17,7 @@ To enable Node scaling (full details [here](https://docs.microsoft.com/en-us/azu
 > The cluster autoscaler has many more parameters, see [here](https://github.com/kubernetes/autoscaler/blob/master/cluster-autoscaler/FAQ.md#what-are-the-parameters-to-ca)
 Run `EnableNodeScaling.ps1` to add auto-scaling to a running cluster.
 
-To enable Pod scaling (full details [here](https://docs.microsoft.com/en-us/azure/aks/tutorial-kubernetes-scale)), specify resources *per* container in a Pod, e.g:
+To enable Pod scaling (full details [here](https://kubernetes.io/docs/tasks/run-application/horizontal-pod-autoscale/) and [tutorial](https://docs.microsoft.com/en-us/azure/aks/tutorial-kubernetes-scale)), specify resources *per* container in a Pod, e.g:
 ```
 resources:
   requests: # Minimum
@@ -68,3 +68,16 @@ Monitor the number of Pod replicas by:
 ```
 PS> kubectl get pod -w
 ```
+
+Inspect the Horizontal Pod Autoscaler:
+```
+PS> kubectl get hpa
+```
+
+and a full description of its actions:
+```
+PS> kubectl describe hpa
+```
+
+The autoscaler by default queries every 15 seconds for metrics. When needed it will upscale the number
+of Pods. Downscaling Pods will happen after a, by default, cool down period of 5 minutes.
