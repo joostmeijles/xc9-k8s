@@ -33,11 +33,6 @@ spec:
         - identity.xc9-k8s.rocks
         - -sitecoreHostname
         - www.xc9-k8s.rocks
-        resources:
-          requests:
-            cpu: 250m
-          limits:
-            cpu: 500m
 ---
 apiVersion: v1
 kind: Service
