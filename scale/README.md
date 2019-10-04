@@ -1,5 +1,5 @@
-As use-case we will use the Mercury Demo website. Mercury is a Sitecore Commerce accelerator (https://mercury-ecommerce.com/) and there is a Dockerized demonstration environment available (on request from https://github.com/avivasolutionsnl/mercury-demo).
-Having a fully Dockerized webshop allows us to quickly get up and running in Kubernetes.
+As use-case we will use the Mercury Demo website. Mercury is a Sitecore Commerce accelerator (https://mercury-ecommerce.com/) and there is a Dockerized demonstration environment available on request from https://github.com/avivasolutionsnl/mercury-demo.
+Having a fully Dockerized Sitecore Commerce webshop allows us to quickly get up and running in Kubernetes.
 
 Start the Mercury demo in Kubernetes using:
 ```
@@ -80,4 +80,4 @@ PS> kubectl describe hpa
 ```
 
 The autoscaler by default queries every 15 seconds for metrics. When needed it will upscale the number
-of Pods. Downscaling Pods will happen after a, by default, cool down period of 5 minutes.
+of Pods. Downscaling Pods will happen after a (default) cool down period of 5 minutes.

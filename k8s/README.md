@@ -5,14 +5,14 @@ To create a resource group and cluster as described [here](https://docs.microsof
 ```
 PS> ./CreateCluster.ps1
 ```
-NB. This automatically create a Service Prinpical: https://github.com/MicrosoftDocs/azure-docs/blob/master/articles/aks/kubernetes-service-principal.md
+NB. This automatically creates a Service Prinpical: https://github.com/MicrosoftDocs/azure-docs/blob/master/articles/aks/kubernetes-service-principal.md
 
 The script creates a cluster with:
 - Linux node (DS2v2, 2 CPUs, 7 GiB RAM, 14 GiB temp storage, €0.1147/hour)
 - Windows node (D2sv3, 2 CPUs, 8 GiB RAM, 16 GiB temp storage, €0.1788/hour)
 Total costs are approx. €0.30/hour (excluding a small amount of storage costs)
 
-Configure `kubectl` credentials:
+Next, configure `kubectl` credentials:
 ```
 PS> az aks get-credentials --resource-group myResourceGroup --name myAKSCluster
 ```
@@ -62,15 +62,16 @@ It consists of two steps;
 ```
 PS> kubectl apply -f ./k8s/nginx-ingress.yaml
 ```
-> `nginx-ingress.yaml` is [this](https://raw.githubusercontent.com/kubernetes/ingress-nginx/master/deploy/static/mandatory.yaml)) + Linux node selector.
+> `nginx-ingress.yaml` is [this](https://raw.githubusercontent.com/kubernetes/ingress-nginx/master/deploy/static/mandatory.yaml) + Linux node selector.
 
-1. A cloud provider specific, Azure part:
+
+2. A cloud provider specific, Azure part:
 ```
 PS> kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/master/deploy/static/provider/cloud-generic.yaml
 ```
 
 ## Add External DNS configuration
-By default you will only have a Ip configured for you cluster. It of course more convenient to have a DNS name assigned to it.
+By default you will have an IP configured for you cluster. It of course more convenient to have a DNS name assigned to it.
 As prerequisite you need to have a domain name and Azure DNS zone setup (see [here](https://docs.microsoft.com/en-us/azure/dns/dns-domain-delegation)). 
 
 To dynamic DNS provisioning for your cluster we use an [external-dns](https://github.com/kubernetes-incubator/external-dns/blob/master/docs/tutorials/azure.md) service, to set it up;
@@ -109,7 +110,7 @@ Read the full details [here](https://docs.microsoft.com/en-us/azure/aks/kubernet
 ## Add automatic TLS certificates
 The preferred way is to use cert-manager. It however currently does not fully support `nodeSelector` and thus does not work in hybrid cluster, e.g. like we have with a Linux and Windows node.
 
-The legacy and workaround is to use `kube-lego`:
+The legacy way and workaround is to use `kube-lego`:
 ```
 PS> helm install --name kube-lego --set config.LEGO_EMAIL=joost@meijl.es --set config.LEGO_URL=https://acme-v01.api.letsencrypt.org/directory --set nodeSelector."beta\.kubernetes\.io\/os"=linux --set rbac.create=true stable/kube-lego
 ``` 

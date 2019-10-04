@@ -11,7 +11,10 @@ Not that you can currently not run Kubernetes & Windows containers locally as Do
 > This repository provides a Sitecore XC 9 AKS setup for *study* purposes and is not to be meant to be used in production.
 
 Getting up and running with Sitecore XC 9, Kubernetes, and Azure Kubernetes Service is split up in two parts:
-- [Creating a Kubernetes cluster in AKS](./cluster/README.md)
+- [Creating a Kubernetes cluster in AKS](./k8s/README.md)
 - [Preparing and running XC 9 in AKS](./xc9/README.md)
 
 After reading and applying these parts you will have a basic understanding of how to deploy Sitecore XC in AKS.
+
+Now you will for example be ready to setup auto-scaling for your cluster.
+An example of how to configure that you can find [here](./scale/README.md).

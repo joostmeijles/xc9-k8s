@@ -1,13 +1,12 @@
 # Prepare application
 The Docker Compose setup needs to be translated into a Kubernetes setup. 
-Where Docker Compose uses mostly one YAML config file (see [here](./docker-compose.yml)), our Kubernetes setup will have about one file per Deployment / Service.
+Where Docker Compose uses mostly one YAML config file Kubernetes setup will have about one file per Deployment / Service.
 
 The Kubernetes config files can be found [here](./k8s)
 
-NB. You could use [Kompose](http://kompose.io/) to convert a docker-compose.yml to a Kubernetes YAML file. 
-> Use a major version in your docker-compose.yml, e.g. replace `2.4` by `2` (see conversion matrix [here](http://kompose.io/conversion/))
+You could use [Kompose](http://kompose.io/) to convert a docker-compose.yml to a Kubernetes YAML file, but doing it manually is more educational and about as much work.
 
-## Add storage
+## Storage
 There are two options for file storage in AKS:
 - [Azure Disk](https://docs.microsoft.com/en-us//azure/aks/azure-disks-dynamic-pv)
 - [Azure Files](https://docs.microsoft.com/en-us//azure/aks/azure-files-dynamic-pv)
