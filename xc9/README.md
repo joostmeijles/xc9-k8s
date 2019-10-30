@@ -1,8 +1,6 @@
 # Prepare application
-The Docker Compose setup needs to be translated into a Kubernetes setup. 
-Where Docker Compose uses mostly one YAML config file Kubernetes setup will have about one file per Deployment / Service.
-
-The Kubernetes config files can be found [here](./k8s)
+The Docker Compose setup (e.g. from [avivasolutions/sitecore-docker](https://github.com/avivasolutionsnl/sitecore-docker/tree/master/example/xc)) needs to be translated into a Kubernetes setup. 
+Where Docker Compose uses mostly one YAML config file, a Kubernetes setup will have about one file per Deployment / Service.
 
 You could use [Kompose](http://kompose.io/) to convert a docker-compose.yml to a Kubernetes YAML file, but doing it manually is more educational and about as much work.
 
