@@ -50,7 +50,7 @@ spec:
         type: Utilization
         averageUtilization: 50 # Target is 50% of the requested CPU accros all pods, i.e. 50% of 250 milli CPU in this case
 ```
-Above spec requests to add a Pod when a the CPU load for a single Pod, which is the minimum and initial situation, goes above 50% of the requested 250 milli CPU.
+Above spec requests to add a Pod when the CPU load for a single Pod, which is the minimum and initial situation, goes above 50% of the requested 250 milli CPU.
 
 See [here](https://kubernetes.io/docs/tasks/run-application/horizontal-pod-autoscale-walkthrough/) for full details.
 
