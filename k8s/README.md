@@ -112,7 +112,7 @@ The preferred way is to use cert-manager. It however currently does not fully su
 
 The legacy way and workaround is to use `kube-lego`:
 ```
-PS> helm install --name kube-lego --set config.LEGO_EMAIL=joost@meijl.es --set config.LEGO_URL=https://acme-v01.api.letsencrypt.org/directory --set nodeSelector."beta\.kubernetes\.io\/os"=linux --set rbac.create=true stable/kube-lego
+PS> helm install kube-lego --set config.LEGO_EMAIL=joost@meijl.es --set config.LEGO_URL=https://acme-v01.api.letsencrypt.org/directory --set nodeSelector."beta\.kubernetes\.io\/os"=linux --set rbac.create=true stable/kube-lego
 ``` 
 
 Next to enable automatic tls generation for a certain ingress route add an annotation;
